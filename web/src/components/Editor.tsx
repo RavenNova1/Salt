@@ -1496,24 +1496,9 @@ function isEffectivelyEmpty(doc: unknown[]): boolean {
   return b?.type === 'paragraph' && (!b.content || b.content.length === 0);
 }
 
-function BlockContent({
-  provider,
-  pageId,
-  seed,
-  hadContent,
-  user,
-  theme,
-  canEdit,
-  pagesById,
-  tagColors,
-  onNavigate,
-  onOpenInNewTab,
-  onCreatePage,
-  onPagesChanged,
-  structureOpen,
-}: {
+function BlockContent(props: {
   provider: SaltProvider;
-  pageId: string;
+  pageId: string | null;
   seed: unknown[] | null;
   hadContent: boolean;
   structureOpen: boolean;
@@ -1527,6 +1512,22 @@ function BlockContent({
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
 }) {
+  const {
+    provider,
+    pageId,
+    seed,
+    hadContent,
+    user,
+    theme,
+    canEdit,
+    pagesById,
+    tagColors,
+    onNavigate,
+    onOpenInNewTab,
+    onCreatePage,
+    onPagesChanged,
+    structureOpen,
+  } = props;
   const editor = useCreateBlockNote({
     schema: saltSchema,
     collaboration: {
@@ -1539,7 +1540,7 @@ function BlockContent({
     // file list. Without it a PDF added in the browser stayed invisible to
     // both, while the same PDF added by an agent did not — the MCP path has
     // always passed a page id.
-    uploadFile: (file: File) => api.upload(file, pageId),
+    uploadFile: (file: File) => api.upload(file, pageId || undefined),
     // Column layout: edge-drop cursor + its dictionary entries.
     dictionary: coreEn,
   });
@@ -1677,6 +1678,42 @@ function BlockContent({
         group: 'Basic blocks',
         icon: <span>📄</span>,
         onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'subpages' } as never),
+      },
+      {
+        title: t('Page'),
+        subtext: t('Embed a sub-page in this page'),
+        aliases: ['page', 'seite', 'subpage', 'unterseite'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
+        group: 'Basic blocks',
+        icon: <FileText size={18} />,
+        onItemClick: async () => {
+          if (!props.pageId) {
+            toast(t('Could not be created'));
+            return;
+          }
+          try {
+            const created = await api.createPage(props.pageId, '');
+            props.onPagesChanged();
+            editor.insertInlineContent([
+              {
+                type: 'pageLink',
+                props: { pageId: created.id, label: created.title || t('Untitled') },
+              },
+              ' ',
+            ]);
+            try {
+              await api.updatePage(
+                props.pageId,
+                { content: editor.document },
+                { materialize: true },
+              );
+            } catch {
+              // Best-effort materialize before navigation; Yjs relay also syncs.
+            }
+            props.onNavigate(created.id);
+          } catch (e) {
+            toast((e as Error).message || t('Could not be created'));
+          }
+        },
       },
     ];
     return filterSuggestionItems(
@@ -1889,7 +1926,7 @@ function BlockContent({
     let added = 0;
     for (const file of files) {
       try {
-        const url = await api.upload(file, pageId);
+        const url = await api.upload(file, pageId || undefined);
         // Appended at the end: a drop outside the text names no position.
         editor.insertBlocks(
           [{ type: blockTypeFor(file), props: { url, name: file.name } } as never],

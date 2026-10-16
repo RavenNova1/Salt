@@ -1,6 +1,9 @@
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
 import { createReactInlineContentSpec } from '@blocknote/react';
 import { bookmarkSpec, databaseSpec, calloutSpec, tocSpec, subpagesSpec, columnsSpec, mermaidSpec } from './blocks';
+import { useBlockCtx } from './blockContext';
+import { PageIcon } from './pageIcon';
+import { t } from './i18n';
 
 // A "pageLink" is an inline mention of another salt.md page. It stores the target
 // page id and a display label. Clicking it dispatches a navigation event that
@@ -15,21 +18,31 @@ export const pageLinkSpec = createReactInlineContentSpec(
     content: 'none',
   } as const,
   {
-    render: (props) => (
-      <button
-        type="button"
-        className="page-link"
-        contentEditable={false}
-        onClick={() =>
-          window.dispatchEvent(
-            new CustomEvent('salt:navigate', { detail: props.inlineContent.props.pageId }),
-          )
-        }
-      >
-        <span className="page-link-icon">🔗</span>
-        {props.inlineContent.props.label || 'Untitled'}
-      </button>
-    ),
+    render: (props) => {
+      const { pagesById } = useBlockCtx();
+      const pageId = props.inlineContent.props.pageId;
+      const page = pagesById.get(pageId);
+      const isLive = !!page && !page.trashed;
+      const label = (isLive && page.title) || props.inlineContent.props.label || t('Untitled');
+
+      return (
+        <button
+          type="button"
+          className="page-link"
+          contentEditable={false}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('salt:navigate', { detail: pageId }),
+            )
+          }
+        >
+          <span className="page-link-icon">
+            <PageIcon icon={isLive ? page.icon : undefined} size={14} fallback="🔗" />
+          </span>
+          {label}
+        </button>
+      );
+    },
   },
 );
 

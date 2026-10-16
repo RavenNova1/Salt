@@ -66,6 +66,7 @@ other text, the new block is inserted **after** it.
 | **Embed a collection** | Basic blocks | none |
 | **Table of contents** | Basic blocks | none |
 | **Sub-pages** | Basic blocks | none |
+| **Page** | Basic blocks | none |
 | **Table** | Advanced | none |
 | **Diagram** | Advanced | none |
 | **Image**, **Video**, **Audio**, **File** | Media | none |
@@ -79,7 +80,7 @@ whether or not the menu is open, **except `Mod-Alt-c`**, which is printed
 beside **Code Block** but is bound to no key at all. One shortcut goes the other
 way and is advertised nowhere: `Mod-Alt-q` turns the current block into a quote.
 
-The seven salt.md blocks carry a one-line description in the menu:
+The eight salt.md items carry a one-line description in the menu:
 
 - **Columns**: *Two blocks side by side*
 - **Diagram**: *A flow chart written as text*
@@ -88,6 +89,7 @@ The seven salt.md blocks carry a one-line description in the menu:
 - **Embed a collection**: *Show an existing collection inside the document*
 - **Table of contents**: *Auto-generated list of every heading*
 - **Sub-pages**: *List of pages below this one*
+- **Page**: *Embed a sub-page in this page*
 
 **Columns** is a block that holds nothing itself. Inserting it gives you two
 empty blocks side by side; the small **2 / 3** control at its right edge, which
@@ -345,6 +347,13 @@ appear for you. With none it says *No sub-pages.*
 Like the table of contents it is built on the spot, so it exports as nothing:
 not in Markdown, not in the HTML download, not on paper and not on a shared
 page.
+
+### Page
+
+The `/page` slash command creates a child page filed directly under the current
+page, places an inline page link chip to it at the cursor, and navigates
+straight to the new page. The inserted link displays the sub-page's live title
+and icon.
 
 ### Bookmark / Embed
 
